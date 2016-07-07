@@ -28,6 +28,9 @@ void EuclideanLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       bottom[0]->cpu_data(),
       bottom[1]->cpu_data(),
       diff_.mutable_cpu_data());
+
+  // MAYBE INSERT WEIGHT HERE!!!!!!!!!!!!!!!!
+
   //Dtype dot = caffe_cpu_dot(count, diff_.cpu_data(), diff_.cpu_data());
   //Dtype loss = dot / bottom[0]->num() / Dtype(2);
   //top[0]->mutable_cpu_data()[0] = loss;
@@ -59,16 +62,18 @@ template <typename Dtype>
 void EuclideanLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
   // Testing modifications
-  cout << "Testing Mods" << endl;
+  std::cout << "Bottom 0: " << bottom[0]->cpu_data()[0] << std::endl;
+  std::cout << "Bottom 1: " << bottom[1]->cpu_data()[0] << std::endl;
+  std::cout << "Bottom 2: " << bottom[2]->cpu_data()[0] << std::endl;
   for (int i = 0; i < 2; ++i) {
     if (propagate_down[i]) {
       const Dtype sign = (i == 0) ? 1 : -1;
       const Dtype alpha = sign * top[0]->cpu_diff()[0] / bottom[i]->num();
       caffe_cpu_axpby(
           bottom[i]->count(),              // count
-          alpha,                              // alpha
-          diff_.cpu_data(),                   // a
-          Dtype(0),                           // beta
+          alpha,                           // alpha
+          diff_.cpu_data(),                // a
+          Dtype(0),                        // beta
           bottom[i]->mutable_cpu_diff());  // b
     }
   }
