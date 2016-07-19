@@ -40,6 +40,8 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   //int dim = bottom[0]->count() / bottom[0]->num();
   //vector<Dtype> maxval(top_k_+1);
   //vector<int> max_id(top_k_+1);
+
+  int cancel = 0;  
   for (int i = 0; i < num; ++i) {
     // Accuracy
     float data_x = (-1)*cos(bottom_data[i * 2 + 0])*sin(bottom_data[i * 2 + 1]);
@@ -53,11 +55,15 @@ void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     float norm_label = sqrt(label_x*label_x + label_y*label_y + label_z*label_z);
 
     float angle_value = (data_x*label_x+data_y*label_y+data_z*label_z) / (norm_data*norm_label);
-    accuracy += (acos(angle_value)*180)/3.1415926;
+    float temp_accuracy = (acos(angle_value)*180)/3.1415926;
+    if(!isnan(temp_accuracy))
+      accuracy += temp_accuracy; 
+    else
+      cancel++; 
   }
 
   // LOG(INFO) << "Accuracy: " << accuracy;
-  top[0]->mutable_cpu_data()[0] = accuracy / num;
+  top[0]->mutable_cpu_data()[0] = accuracy/(num-cancel);
   // Accuracy layer should not be used as a loss function.
 }
 

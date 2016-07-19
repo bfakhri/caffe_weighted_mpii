@@ -29,7 +29,11 @@ void EuclideanLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       bottom[1]->cpu_data(),
       diff_.mutable_cpu_data());
 
-  // MAYBE INSERT WEIGHT HERE!!!!!!!!!!!!!!!!
+  caffe_mul(
+      count,
+      diff_.mutable_cpu_data(),
+      bottom[2]->cpu_data(),
+      diff_.mutable_cpu_data());
 
   //Dtype dot = caffe_cpu_dot(count, diff_.cpu_data(), diff_.cpu_data());
   //Dtype loss = dot / bottom[0]->num() / Dtype(2);
@@ -39,7 +43,8 @@ void EuclideanLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   const Dtype* bottom_data = bottom[0]->cpu_data();
   const Dtype* bottom_label = bottom[1]->cpu_data();
   int num = bottom[0]->num();
-  
+ 
+  int cancel = 0;  
   for (int i = 0; i < num; ++i) {
     // Accuracy
     float data_x = (-1)*cos(bottom_data[i * 2 + 0])*sin(bottom_data[i * 2 + 1]);
@@ -53,18 +58,22 @@ void EuclideanLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     float norm_label = sqrt(label_x*label_x + label_y*label_y + label_z*label_z);
 
     float angle_value = (data_x*label_x+data_y*label_y+data_z*label_z) / (norm_data*norm_label);
-    accuracy += (acos(angle_value)*180)/3.1415926;
+    float temp_accuracy = (acos(angle_value)*180)/3.1415926;
+    if(!isnan(temp_accuracy))
+      accuracy += temp_accuracy; 
+    else
+      cancel++; 
   }
-  top[0]->mutable_cpu_data()[0] = accuracy/num;
+  top[0]->mutable_cpu_data()[0] = accuracy/(num-cancel);
 }
 
 template <typename Dtype>
 void EuclideanLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
   // Testing modifications
-  std::cout << "Bottom 0: " << bottom[0]->cpu_data()[0] << std::endl;
-  std::cout << "Bottom 1: " << bottom[1]->cpu_data()[0] << std::endl;
-  std::cout << "Bottom 2: " << bottom[2]->cpu_data()[0] << std::endl;
+  //std::cout << "Bottom 0: " << bottom[0]->cpu_data()[0] << std::endl;
+  //std::cout << "Bottom 1: " << bottom[1]->cpu_data()[0] << std::endl;
+  //std::cout << "Bottom 2: " << bottom[2]->cpu_data()[0] << std::endl;
   for (int i = 0; i < 2; ++i) {
     if (propagate_down[i]) {
       const Dtype sign = (i == 0) ? 1 : -1;
